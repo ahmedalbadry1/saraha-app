@@ -1,14 +1,13 @@
 import Crypto from "crypto"
-import {ENC_KEY,ENC_IV_LENGTH,ENC_ALGO} from "../../config/config.service.js"
-import { buffer } from "stream/consumers"
+import configService from "../../config/config.service.js"
 
-let key = Buffer.from(ENC_KEY,"hex")
+let key = Buffer.from(configService.ENC_KEY,"hex")
 
 
 export const encryption = (plaintext)=>{
 
-    const iv = Crypto.randomBytes(ENC_IV_LENGTH)
-    let cipherIv=Crypto.createCipheriv(ENC_ALGO,key,iv)
+    const iv = Crypto.randomBytes(configService.ENC_IV_LENGTH)
+    let cipherIv=Crypto.createCipheriv(configService.ENC_ALGO,key,iv)
     let result = cipherIv.update(plaintext,"utf-8","hex")
     result += cipherIv.final("hex")
     return `${iv.toString("hex")} :: ${result}`

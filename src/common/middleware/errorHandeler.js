@@ -1,5 +1,17 @@
-
+import {  ZodError } from "zod"
 export const errorHandler = (err,req,res,next)=>{
+
+if (err instanceof ZodError) {
+  const formattedErrors = err.issues.map((issue) => ({
+    field: issue.path.join("."), 
+    message: issue.message,      
+  }));
+
+  return res.status(400).json({
+    message: "Validation Error",
+    errors: formattedErrors,
+  });
+}
 
     res.status(err.cause || 500).json({
         message :err.message || "un expexted eror",

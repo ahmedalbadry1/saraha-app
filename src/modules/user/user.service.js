@@ -1,4 +1,4 @@
-import {ur}from "../../repo/index.js"
+import {ur}from "../../DB/repo/index.js"
 import {decryption, encryption, exeption, RoleEnum} from "../../common/index.js"
 import mongoose from "mongoose"
 
@@ -36,7 +36,11 @@ export const updateUser = async ({ user, id, data }) => {
 
     let updatedUser
     try {
-        updatedUser = await ur.updateUser(id, updates)
+        updatedUser = await ur.findByIdAndUpdate({
+            id,
+            update: updates,
+            options: { runValidators: true }
+        })
     } catch (error) {
         if (error.code === 11000) {
             exeption.conflict({ message: "Email already exists" })
@@ -50,4 +54,11 @@ export const updateUser = async ({ user, id, data }) => {
         exeption.notFound({ message: "user not found" })
     }
     return profile(updatedUser)
+}
+
+export const getProfileByID = async(id)=>{
+  
+    return await ur.findById({id:id})
+
+    
 }

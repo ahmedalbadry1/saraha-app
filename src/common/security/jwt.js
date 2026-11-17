@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken"
 import { RoleEnum, tokenTypeEnum } from ".././/index.js"
-import * as configService from "../../config/config.service.js"
+import configService from "../../config/config.service.js"
 
 const getRoleSecret = (role)=>{
     let secrets

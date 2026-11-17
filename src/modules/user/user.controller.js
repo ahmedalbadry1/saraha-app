@@ -20,3 +20,8 @@ userRouter.get("/profile", auth({tokenType : tokenTypeEnum.access}), authorizati
         data: us.profile(req.user)
     })
 })
+
+userRouter.get("/profile/:id",async(req,res,next)=>{
+    let user = await us.getProfileByID(req.params.id)
+    successResponce({res ,message:"user found",data:user})
+})

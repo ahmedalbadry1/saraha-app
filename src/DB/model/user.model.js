@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
-import { genderEnum, RoleEnum } from "../../common/enums/index.js";
+import { genderEnum,providerEnum, RoleEnum ,emailEnum} from "../../common/enums/index.js";
+
+
 
 const userSchema=new mongoose.Schema({
 
@@ -23,6 +25,7 @@ const userSchema=new mongoose.Schema({
         minLength:2,
         required:true,
         unique:true,
+       
     },
       gender:{
         type:Number,
@@ -31,7 +34,9 @@ const userSchema=new mongoose.Schema({
 
       },
       password:{
-        required:true,
+        required:function(){
+            return this.provider == providerEnum.system
+        },
         type:String,
         minLength:8
       },
@@ -49,6 +54,21 @@ const userSchema=new mongoose.Schema({
         default:RoleEnum.user
     
 
+      },
+      provider:{
+        type:Number,
+        enum:Object.values(providerEnum),
+        default:providerEnum.system
+      },
+      image:{
+        type:String
+      },
+      isVerified:{
+        type:Number,
+        enum:Object.values(emailEnum),
+        default:function(){
+          return this.provider
+        }
       }
 },{
     timestamps:true,
@@ -70,5 +90,12 @@ userSchema.virtual("userName").set(function(value){
 }).get(function(){
     return `${this.firstName} ${this.lastName}`
 })
+userSchema.index(
+  { createdAt: 1 },
+  {
+    expireAfterSeconds: 100, 
+    partialFilterExpression: { isVerified: emailEnum.notVerified },
+  }
+);
 
 export const userModel = mongoose.model("User",userSchema)

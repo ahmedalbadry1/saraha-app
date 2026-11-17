@@ -1,9 +1,9 @@
  import{ hash  , compare} from "bcrypt"
-import { SALT } from "../../config/config.service.js"
+import configService from "../../config/config.service.js"
 
  export const myHash = async ({plainText})=>{
 
-    return await hash (plainText ,SALT) 
+    return await hash (plainText ,configService.SALT) 
 
  }
 
