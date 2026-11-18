@@ -16,7 +16,7 @@ export const encryption = (plaintext)=>{
 export const decryption = (cipherText)=>{
     let [hexIv , encrypted] = cipherText.split("::").map(part=>part.trim())
     const iv = Buffer.from(hexIv,"hex")
-    const decipherIv = Crypto.createDecipheriv(ENC_ALGO,key,iv)
+    const decipherIv = Crypto.createDecipheriv(configService.ENC_ALGO,key,iv)
     let result = decipherIv.update (encrypted , "hex" , "utf-8")
     result += decipherIv.final("utf-8")
     return result

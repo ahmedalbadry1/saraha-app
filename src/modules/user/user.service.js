@@ -56,9 +56,18 @@ export const updateUser = async ({ user, id, data }) => {
     return profile(updatedUser)
 }
 
-export const getProfileByID = async(id)=>{
-  
-    return await ur.findById({id:id})
-
+export const getProfileByID = async (id) => {
+    const user = await ur.findById({ id: id });
     
-}
+    
+    if (!user) {
+        throw new Error("User not found"); 
+    }
+
+    let { firstName, lastName, email, phone } = user;
+    phone = decryption(phone);
+    
+    let userName = `${firstName} ${lastName}`; 
+    
+    return { userName, email, phone };
+};
