@@ -1,6 +1,6 @@
 import { Router } from "express";
 import * as us from "./user.service.js"
-import { successResponce , auth ,authorization ,tokenTypeEnum, RoleEnum,validation} from "../../common/index.js"
+import { successResponce , auth ,authorization ,tokenTypeEnum, RoleEnum,validator} from "../../common/index.js"
 import { userProfileSchema } from "./user.validation.js";
 
 
@@ -22,7 +22,7 @@ userRouter.get("/profile", auth({tokenType : tokenTypeEnum.access}), authorizati
     })
 })
 
-userRouter.get("/profile/:userId",validation(userProfileSchema),async(req,res,next)=>{
+userRouter.get("/profile/:userId",validator(userProfileSchema),async(req,res,next)=>{
     let user = await us.getProfileByID(req.params.userId)
     successResponce({res ,message:"user found",data:user})
 })

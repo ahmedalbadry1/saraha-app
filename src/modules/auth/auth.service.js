@@ -1,11 +1,10 @@
-import {myCompare,myHash,exeption , encryption ,createTokens, RoleEnum, providerEnum ,sendEmail, emailEnum }from "../../common/index.js"
-import { ur,mr } from "../../DB/repo/index.js"
+import {myCompare,myHash,exeption , encryption ,createTokens, RoleEnum, providerEnum ,cs,sendEmail,emailEnum,emailEvent }from "../../common/index.js"
+import { ur} from "../../DB/repo/index.js"
 import configService from "../../config/config.service.js"
 import {OAuth2Client} from  'google-auth-library';
 import { randomInt } from 'crypto'
 
 
- 
 
 
 export const signUp = async (data)=>{
@@ -14,9 +13,19 @@ export const signUp = async (data)=>{
         data.password = await myHash ({plainText:data.password})
     data.phone = await encryption(data.phone)
 
+    let user= await ur.create({ data: { ...data, role: RoleEnum.user } })
+    const otp = await generateOtp({
+    userId: user._id,
+    type: "signup",
+  });
+
+  emailEvent.emit("signup", {
+    email: user.email,
+    otp,
+  });
     
 
-        return await ur.create({ data: { ...data, role: RoleEnum.user } })
+        return user
     }
    
    
@@ -132,69 +141,44 @@ export const verifyGoogleId=async(idToken)=> {
 
 
 export const confermEmail = async({otp, email})=>{
-   let user = await ur.findOne({ filter: { email } })
+   const normalizedEmail = email.toLowerCase().trim();
+   let user = await ur.findOne({ filter: { email: normalizedEmail } })
    if(!user){
-    exeption.badRequest({message:"user not found"})
+    exeption.notFound({message:"user not found"})
    }
-    let userId = user._id
    
+    
+   
+    const key = `otp:signup:${user._id}`;
+  const storedOtp = await cs.get({ key });
   
-   
-    let message = await mr.findOne({filter:{userId}})
-    if(!message || message.otp !== otp)
-    {
-        exeption.badRequest({message:"wrong or expired otp try again"})
-    }
+  console.log({
+  emailArg: email,
+  otpArg: otp,
+  userId: user?._id?.toString(),
+  key,
+  storedOtp,
+}); 
+
+    if (!storedOtp || String(storedOtp).trim() !== String(otp).trim()) {
+    return exeption.badRequest({ message: "Invalid OTP" });
+  }
     await ur.updateOne({
-        filter :{_id:userId},
+        filter :{_id:user._id},
         update:{isVerified:emailEnum.verified}
     })
-    await mr.deleteOne({ filter: { _id: message._id } })
+    await cs.del({ keys: key })
     return user
 }
 
-export const generateOtp = async (email) => {
-    let user = await ur.findOne({ filter: { email } });
+export const generateOtp = async ({userId,type="signup",ttl=300}) => {
+ 
+    const otp = randomInt(100000, 999999).toString();
+    await cs.set({
+        key: `otp:${type}:${userId}`,
+    value: otp,
+    ttl: ttl,
+    })
 
-    if (!user) {
-        return exeption.notFound({ message: "no user found" });
-    }
-
-    const userId = user._id;
-
-    const deleteResult = await mr.deleteMany({
-       filter: { userId: userId }
-    });
-    console.log("Deleted Count:", deleteResult);
-
-   
-    let messageRecord = await mr.create({
-        data: {
-            otp: randomInt(100000, 999999).toString(),
-            userId: userId
-        }
-    });
-
-    try {
-        await sendEmail({
-          to: email,
-          subject: "Confirm your email",
-          html: `
-            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-              <h2>Welcome</h2>
-              <p>Please use the verification code below to confirm your email. This code is valid for 5 minutes:</p>
-              <div style="background: #f4f4f4; padding: 10px 20px; font-size: 24px; font-weight: bold; letter-spacing: 5px; display: inline-block; margin: 10px 0;">
-                ${messageRecord.otp}
-              </div>
-              <p>If you didn't request this, please ignore this email.</p>
-            </div>
-          `,
-        });
-        console.log("email sent");
-    } catch(err) {
-        
-        exeption.badRequest({ message: "Failed to send confirmation email please try again" });
-    }
-
-    return "otp sent";
+    return otp;
 };

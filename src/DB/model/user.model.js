@@ -25,7 +25,8 @@ const userSchema=new mongoose.Schema({
         minLength:2,
         required:true,
         unique:true,
-       
+        lowercase:true,
+        trim:true,
     },
       gender:{
         type:Number,
@@ -93,7 +94,7 @@ userSchema.virtual("userName").set(function(value){
 userSchema.index(
   { createdAt: 1 },
   {
-    expireAfterSeconds: 100, 
+    expireAfterSeconds: 300, 
     partialFilterExpression: { isVerified: emailEnum.notVerified },
   }
 );

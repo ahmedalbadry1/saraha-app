@@ -1,20 +1,21 @@
-import { Query } from "mongoose";
-import { success } from "zod"
-
-export const validation = (schema) => {
+export const validator = (schema) => {
   return (req, res, next) => {
-    const result = schema.safeParse({
-            params: req.params,   
-            body: req.body,
-            query: req.query,
-            headers: req.headers  
-    });
+    let { success, error, data } = schema(req.headers["accept-language"]).safeParse({
+      body: req.body,
+      params: req.params,
+      query: req.query,
+      headers: req.headers
+    })
 
-    if (!result.success) {
-      throw result.error;
+    if (!success) {
+      return res.status(400).json({
+        message: "validation error",
+        issues: error.issues
+      })
     }
 
-    req.validated = result.data;
-    next();
-  };
-};
+    req.validate = data
+    next()
+  }
+}
+

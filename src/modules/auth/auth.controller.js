@@ -1,22 +1,22 @@
 import { Router } from "express";
 import * as us from "./auth.service.js"
-import { auth, successResponce ,tokenTypeEnum, validation} from "../../common/index.js";
+import { auth, successResponce ,tokenTypeEnum, validator} from "../../common/index.js";
 import { loginSchema, signupSchema, confirmEmailSchema, sendOtpSchema, googleLoginSchema } from "./auth.validation.js";
 
 export let authRouter = Router()
  
 
-authRouter.post("/signUp",validation(signupSchema) ,async(req, res, next)=>{
+authRouter.post("/signUp",validator(signupSchema) ,async(req, res, next)=>{
 
-     await us.signUp(req.validated)
+     await us.signUp(req.validate.body)
 
     return successResponce ({
         res , status:200 , message :"user created succesfully but confirm your email "
     })
 })
 
-authRouter.post ("/logIn", validation(loginSchema),async(req, res , next)=>{
-   let token =  await us.logIn(req.validated)
+authRouter.post ("/logIn", validator(loginSchema),async(req, res , next)=>{
+   let token =  await us.logIn(req.validate.body)
 
     return successResponce({res , status : 201 , message :"loged in succesfully" ,data:token})
 })
@@ -30,10 +30,10 @@ authRouter.post("/rotate-token",auth({tokenType:tokenTypeEnum.refresh}),async(re
         });
 })
 
-authRouter.post("/login/google", validation(googleLoginSchema), async (req, res, next) => {
+authRouter.post("/login/google", validator(googleLoginSchema), async (req, res, next) => {
   const issuer = `${req.protocol}://${req.get("host")}`;
   const { tokens, status } = await us.loginWithGoogle({
-    idToken: req.validated.idToken,
+    idToken: req.validate.body.idToken,
     issuer,
   });
 
@@ -45,10 +45,10 @@ authRouter.post("/login/google", validation(googleLoginSchema), async (req, res,
   });
 });
 
-authRouter.patch("/confirm/email", validation(confirmEmailSchema), async(req,res,next)=>{
+authRouter.patch("/confirm/email", validator(confirmEmailSchema), async(req,res,next)=>{
 
 
-  await us.confermEmail({otp: req.validated.otp, email: req.validated.email})
+  await us.confermEmail({otp: req.validate.body.otp, email: req.validate.body.email})
 
   return successResponce({
     res,status:200,message:"email confermed successfully"
@@ -57,15 +57,6 @@ authRouter.patch("/confirm/email", validation(confirmEmailSchema), async(req,res
 
 })
 
-authRouter.post("/send/otp", validation(sendOtpSchema), async(req,res,next)=>{
-  let otp = await us.generateOtp(req.validated.email)
-
-  return successResponce({
-    res,status:200,message:"otp sent succesfully"
-  })
-
-
-})
 
 authRouter.post("/forgetPassword",async(req,res,next)=>{
   

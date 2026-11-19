@@ -21,6 +21,8 @@ export default {
     JWT_REFRESH_EXP: process.env.JWT_REFRESH_EXP,
     CLIENT_ID:process.env.CLIENT_ID,
     CLIENT_SECRET:process.env.CLIENT_SECRET,
-    GMAIL_PASS:process.env.GMAIL_PASS
+    GMAIL_PASS:process.env.GMAIL_PASS,
+    REDIS_TOKEN:process.env.REDIS_TOKEN,
+    REDIS_URL:process.env.REDIS_URL
 }
 
