@@ -1,0 +1,73 @@
+import {ur}from "../../DB/repo/index.js"
+import {decryption, encryption, exeption, RoleEnum} from "../../common/index.js"
+import mongoose from "mongoose"
+
+export const profile = (user) => {
+    const data = user.toObject()
+
+    if (data.phone) {
+        data.phone = decryption(data.phone)
+    }
+
+    return data
+}
+
+export const updateUser = async ({ user, id, data }) => {
+    if (!mongoose.isObjectIdOrHexString(id)) {
+        exeption.BadRequest("Invalid user id")
+    }
+    if (user.role !== RoleEnum.admin && user._id.toString() !== id.toLowerCase()) {
+        exeption.Forbidden("You can only update your own account")
+    }
+
+    const allowedFields = ["firstName", "lastName", "email", "gender", "phone"]
+    if (!data || typeof data !== "object" || Array.isArray(data) ||
+        !Object.keys(data).length || Object.keys(data).some(field => !allowedFields.includes(field))) {
+        exeption.BadRequest("Send only firstName, lastName, email, gender or phone")
+    }
+
+    const updates = { ...data }
+    if (Object.hasOwn(updates, "phone")) {
+        if (typeof updates.phone !== "string" || updates.phone.length < 11) {
+            exeption.BadRequest("Phone must be a string of at least 11 characters")
+        }
+        updates.phone = encryption(updates.phone)
+    }
+
+    let updatedUser
+    try {
+        updatedUser = await ur.findByIdAndUpdate({
+            id,
+            update: updates,
+            options: { runValidators: true }
+        })
+    } catch (error) {
+        if (error.code === 11000) {
+            exeption.Conflict("Email already exists")
+        }
+        if (error.name === "ValidationError" || error.name === "CastError") {
+            exeption.BadRequest(error.message)
+        }
+        throw error
+    }
+    if (!updatedUser) {
+        exeption.NotFound("user not found")
+    }
+    return profile(updatedUser)
+}
+
+export const getProfileByID = async (id) => {
+    const user = await ur.findById({ id: id });
+    
+    
+    if (!user) {
+        exeption.NotFound("User not found");
+    }
+
+    let { firstName, lastName, email, phone } = user;
+    phone = decryption(phone);
+    
+    let userName = `${firstName} ${lastName}`; 
+    
+    return { userName, email, phone };
+};
